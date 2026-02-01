@@ -2,12 +2,11 @@ import { Context } from "@netlify/functions";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from "axios";
 
-console.log("Function Loaded with Spy Mode 🕵️");
-
+// Gemini-2.0-flash を使用（リストにあった最新モデル）
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export default async (req: Request, context: Context) => {
-  // CORS設定
+  // CORS設定（ブラウザからのアクセス許可）
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: {
@@ -23,27 +22,12 @@ export default async (req: Request, context: Context) => {
     const { action, payload } = body;
     console.log("Received Action:", action);
 
-    // ★★★ ここがスパイ・コードです ★★★
-    // 検索ボタン(generateMeSH)が押されたら、使えるモデルを強制的に調査する
-    if (action === "generateMeSH") {
-        console.log("🔍 Checking available models via API...");
-        try {
-            // SDKを使わず直接Googleに問い合わせる
-            const listRes = await axios.get(
-                `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`
-            );
-            console.log("✅ 【成功】使えるモデル一覧:", listRes.data.models.map((m: any) => m.name));
-        } catch (e: any) {
-            // もしここでエラーが出たら、キー自体がおかしい
-            console.error("❌ 【失敗】モデル一覧が取れません:", e.response?.data || e.message);
-        }
-    }
-    // ★★★★★★★★★★★★★★★★★★★
-
     // 1. MeSH生成
     if (action === "generateMeSH") {
-      // 最新のモデル名でトライ
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      if (!process.env.GEMINI_API_KEY) throw new Error("API Key is missing!");
+      
+      // ★ここをリストにあった「gemini-2.0-flash」に変更しました！
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const prompt = `以下のキーワードに関連する医学的なMeSH (Medical Subject Headings) タームを5つ、英語でリストアップしてください。カンマ区切りで出力してください。キーワード: ${payload}`;
       
       const result = await model.generateContent(prompt);
@@ -86,8 +70,8 @@ export default async (req: Request, context: Context) => {
     // 3. 論文詳細分析
     if (action === "analyzePapers") {
         const { paperIds } = payload;
-        // ここも最新モデルにする
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // ★ここも「gemini-2.0-flash」に変更しました！
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
         
         const fetchRes = await axios.get(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi`, {
             params: { db: "pubmed", id: paperIds.join(","), rettype: "abstract", retmode: "xml" }
@@ -115,7 +99,7 @@ export default async (req: Request, context: Context) => {
   } catch (error: any) {
     console.error("Critical Error:", error);
     return new Response(JSON.stringify({ error: error.message, stack: error.stack }), {
-      status: 200, 
+      status: 200, // エラー内容を画面に表示するため200で返す
       headers: { "Content-Type": "application/json" }
     });
   }
