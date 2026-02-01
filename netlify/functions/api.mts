@@ -27,7 +27,7 @@ export default async (req: Request, context: Context) => {
       if (!process.env.GEMINI_API_KEY) throw new Error("API Key is missing!");
       
       // ★ここをリストにあった「gemini-2.0-flash」に変更しました！
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
       const prompt = `以下のキーワードに関連する医学的なMeSH (Medical Subject Headings) タームを5つ、英語でリストアップしてください。カンマ区切りで出力してください。キーワード: ${payload}`;
       
       const result = await model.generateContent(prompt);
@@ -70,8 +70,8 @@ export default async (req: Request, context: Context) => {
     // 3. 論文詳細分析
     if (action === "analyzePapers") {
         const { paperIds } = payload;
-        // ★ここも「gemini-2.0-flash」に変更しました！
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        // ★ここも「gemini-flash-latest」に変更しました！
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
         
         const fetchRes = await axios.get(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi`, {
             params: { db: "pubmed", id: paperIds.join(","), rettype: "abstract", retmode: "xml" }
