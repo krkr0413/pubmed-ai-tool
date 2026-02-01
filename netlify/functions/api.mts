@@ -73,7 +73,7 @@ export default async (req: Request, context: Context) => {
     // 3. 論文詳細分析
     if (action === "analyzePapers") {
         const { paperIds } = payload;
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         
         const fetchRes = await axios.get(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi`, {
             params: { db: "pubmed", id: paperIds.join(","), rettype: "abstract", retmode: "xml" }
