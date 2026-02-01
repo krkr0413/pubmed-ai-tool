@@ -1,6 +1,7 @@
-import { useState } from 'react';
+// ★ここに 'React' を追加したのが修正ポイントです！
+import React, { useState } from 'react';
 import axios from 'axios';
-import { Search, BookOpen, Brain, Activity, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Search, BookOpen, Brain, Activity, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function App() {
   const [keyword, setKeyword] = useState('');
@@ -50,7 +51,6 @@ export default function App() {
         payload: { mesh, years: 5 }
       });
 
-      // ★ここが修正ポイント：配列かどうかチェックする！
       if (Array.isArray(res.data)) {
         setPapers(res.data);
         if (res.data.length === 0) {
@@ -59,7 +59,6 @@ export default function App() {
       } else if (res.data.error) {
         throw new Error(res.data.error);
       } else {
-        // 予想外のデータが来た場合
         console.error("Unexpected response:", res.data);
         setError('検索結果の形式が正しくありません。');
       }
@@ -194,19 +193,4 @@ export default function App() {
 
         {/* 3. AI分析結果 */}
         {analysis && (
-          <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 ring-2 ring-blue-100">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-800">
-              <Brain className="w-5 h-5" />
-              3. AIインサイト
-            </h2>
-            <div className="prose prose-slate max-w-none">
-              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-slate-50 p-4 rounded-lg">
-                {analysis}
-              </pre>
-            </div>
-          </section>
-        )}
-      </div>
-    </div>
-  );
-}
+          <section className="bg-white
