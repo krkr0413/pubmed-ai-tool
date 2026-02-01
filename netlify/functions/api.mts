@@ -2,7 +2,7 @@ import { Context } from "@netlify/functions";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from "axios";
 
-// Gemini Flash (最新版) を使用
+// ★ここが修正点：確実に動く「gemini-flash-latest」を使用
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export default async (req: Request, context: Context) => {
@@ -26,7 +26,8 @@ export default async (req: Request, context: Context) => {
     if (action === "generateMeSH") {
       if (!process.env.GEMINI_API_KEY) throw new Error("API Key is missing!");
       
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // ★修正：動くモデル名に戻しました
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
       const prompt = `以下のキーワードに関連する医学的なMeSH (Medical Subject Headings) タームを5つ、英語でリストアップしてください。カンマ区切りで出力してください。キーワード: ${payload}`;
       
       const result = await model.generateContent(prompt);
@@ -76,15 +77,16 @@ export default async (req: Request, context: Context) => {
       }
     }
 
-    // 3. 論文詳細分析（★ここを修正しました！）
+    // 3. 論文詳細分析
     if (action === "analyzePapers") {
         const { paperIds } = payload;
 
-        // ★修正ポイント：欲張らずに「トップ3」だけ分析する（タイムアウト回避）
+        // ★タイムアウト対策：上位3件のみ分析
         const limitedIds = paperIds.slice(0, 3);
         console.log(`Analyzing top ${limitedIds.length} papers...`);
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // ★修正：動くモデル名に戻しました
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
         
         const fetchRes = await axios.get(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi`, {
             params: { db: "pubmed", id: limitedIds.join(","), rettype: "abstract", retmode: "xml" }
