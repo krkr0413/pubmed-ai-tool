@@ -10,7 +10,7 @@ console.log("API Key Exists?:", !!process.env.GEMINI_API_KEY);
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export default async (req: Request, context: Context) => {
-  // CORS設定（ブラウザからのアクセスを許可）
+  // CORS設定
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: {
@@ -24,7 +24,7 @@ export default async (req: Request, context: Context) => {
   try {
     const body = await req.json();
     const { action, payload } = body;
-    console.log("Received Action:", action); // 何をしようとしたか記録
+    console.log("Received Action:", action); 
 
     // 1. MeSH生成
     if (action === "generateMeSH") {
@@ -45,7 +45,6 @@ export default async (req: Request, context: Context) => {
       const startYear = currentYear - years;
       const term = `${mesh}[Mesh] AND ${startYear}:${currentYear}[DP]`;
       
-      // ESearch
       const searchRes = await axios.get(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi`, {
         params: { db: "pubmed", term, retmax: 10, retmode: "json" }
       });
@@ -55,7 +54,6 @@ export default async (req: Request, context: Context) => {
          return new Response(JSON.stringify([]));
       }
 
-      // ESummary
       const summaryRes = await axios.get(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi`, {
         params: { db: "pubmed", id: ids.join(","), retmode: "json" }
       });
@@ -101,12 +99,10 @@ export default async (req: Request, context: Context) => {
     return new Response("Unknown Action", { status: 400 });
 
   } catch (error: any) {
-    // エラーの正体をログに出す（最重要）
     console.error("Critical Error:", error);
-    
-    // ブラウザ画面にもエラー内容を表示する
+    // エラー内容を画面に返す
     return new Response(JSON.stringify({ error: error.message, stack: error.stack }), {
-      status: 500,
+      status: 200, // 500ではなく200で返して、画面に表示させる
       headers: { "Content-Type": "application/json" }
     });
   }
