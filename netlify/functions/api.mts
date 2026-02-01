@@ -2,10 +2,7 @@ import { Context } from "@netlify/functions";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from "axios";
 
-// --- 診断用ログ ---
-console.log("Function Loading...");
-console.log("API Key Exists?:", !!process.env.GEMINI_API_KEY);
-// ----------------
+console.log("Function Loaded with Spy Mode 🕵️");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -24,12 +21,28 @@ export default async (req: Request, context: Context) => {
   try {
     const body = await req.json();
     const { action, payload } = body;
-    console.log("Received Action:", action); 
+    console.log("Received Action:", action);
+
+    // ★★★ ここがスパイ・コードです ★★★
+    // 検索ボタン(generateMeSH)が押されたら、使えるモデルを強制的に調査する
+    if (action === "generateMeSH") {
+        console.log("🔍 Checking available models via API...");
+        try {
+            // SDKを使わず直接Googleに問い合わせる
+            const listRes = await axios.get(
+                `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`
+            );
+            console.log("✅ 【成功】使えるモデル一覧:", listRes.data.models.map((m: any) => m.name));
+        } catch (e: any) {
+            // もしここでエラーが出たら、キー自体がおかしい
+            console.error("❌ 【失敗】モデル一覧が取れません:", e.response?.data || e.message);
+        }
+    }
+    // ★★★★★★★★★★★★★★★★★★★
 
     // 1. MeSH生成
     if (action === "generateMeSH") {
-      if (!process.env.GEMINI_API_KEY) throw new Error("API Key is missing!");
-      
+      // 最新のモデル名でトライ
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const prompt = `以下のキーワードに関連する医学的なMeSH (Medical Subject Headings) タームを5つ、英語でリストアップしてください。カンマ区切りで出力してください。キーワード: ${payload}`;
       
@@ -73,6 +86,7 @@ export default async (req: Request, context: Context) => {
     // 3. 論文詳細分析
     if (action === "analyzePapers") {
         const { paperIds } = payload;
+        // ここも最新モデルにする
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         
         const fetchRes = await axios.get(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi`, {
@@ -100,9 +114,8 @@ export default async (req: Request, context: Context) => {
 
   } catch (error: any) {
     console.error("Critical Error:", error);
-    // エラー内容を画面に返す
     return new Response(JSON.stringify({ error: error.message, stack: error.stack }), {
-      status: 200, // 500ではなく200で返して、画面に表示させる
+      status: 200, 
       headers: { "Content-Type": "application/json" }
     });
   }
