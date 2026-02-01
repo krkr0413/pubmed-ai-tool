@@ -2,7 +2,7 @@ import { Context } from "@netlify/functions";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from "axios";
 
-// Gemini-2.0-flash を使用（リストにあった最新モデル）
+// gemini-flash-latestを使用
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export default async (req: Request, context: Context) => {
@@ -26,7 +26,7 @@ export default async (req: Request, context: Context) => {
     if (action === "generateMeSH") {
       if (!process.env.GEMINI_API_KEY) throw new Error("API Key is missing!");
       
-      // ★ここをリストにあった「gemini-2.0-flash」に変更しました！
+      // ★ここをリストにあった「gemini-flash-latest」に変更しました！
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
       const prompt = `以下のキーワードに関連する医学的なMeSH (Medical Subject Headings) タームを5つ、英語でリストアップしてください。カンマ区切りで出力してください。キーワード: ${payload}`;
       
